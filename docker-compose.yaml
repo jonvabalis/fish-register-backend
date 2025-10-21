@@ -1,0 +1,13 @@
+﻿services:
+  db:
+    image: mariadb:11.8
+    environment:
+      MARIADB_ROOT_PASSWORD: password
+      MARIADB_DATABASE: fish_register
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
