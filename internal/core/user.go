@@ -15,7 +15,7 @@ type UserAuth struct {
 	Password string    `json:"password"`
 }
 
-type UserRegister struct {
+type RegisterData struct {
 	Email    string `json:"email" binding:"required"`
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
