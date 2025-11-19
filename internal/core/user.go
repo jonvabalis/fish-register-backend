@@ -25,3 +25,7 @@ type UserLogin struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
+
+func (ua *UserAuth) IsEmpty() bool {
+	return ua.UUID.IsNil() && ua.Email == "" && ua.Username == "" && ua.Password == ""
+}

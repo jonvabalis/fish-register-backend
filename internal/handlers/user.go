@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"fish-register-backend/internal/db"
+	"github.com/gofrs/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"net/mail"
@@ -16,8 +19,6 @@ func (app *FishApi) Register(c *gin.Context) {
 		return
 	}
 
-	// Validate Email
-
 	if _, err := mail.ParseAddress(regData.Email); err != nil {
 		log.Printf("invalid register email: %s", err)
 
@@ -25,11 +26,39 @@ func (app *FishApi) Register(c *gin.Context) {
 		return
 	}
 
-	//Email is in use
+	if user, err := db.GetUserByEmail(c.Request.Context(), app.db, regData.Email); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
+		return
+	} else if !user.IsEmpty() {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check email"})
+		return
+	}
 
-	//Username is in use
+	if user, err := db.GetUserByUsername(c.Request.Context(), app.db, regData.Username); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "username already in use"})
+		return
+	} else if !user.IsEmpty() {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check username"})
+		return
+	}
 
-	//Encrypt password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(regData.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+		return
+	}
 
-	//Save user
+	user := core.UserAuth{
+		UUID:     uuid.Must(uuid.NewV4()),
+		Username: regData.Username,
+		Email:    regData.Email,
+		Password: string(hashedPassword),
+	}
+
+	if err := db.CreateUser(c.Request.Context(), app.db, user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "user registered successfully"})
 }

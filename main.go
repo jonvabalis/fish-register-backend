@@ -24,7 +24,7 @@ func main() {
 
 	fishApi := handlers.NewFishApi(dbConn)
 
-	r.GET("/register", fishApi.Register)
+	r.POST("/register", fishApi.Register)
 
 	r.GET("/locations", fishApi.GetLocations)
 	r.POST("/locations", fishApi.InsertLocation)
