@@ -30,6 +30,10 @@ func main() {
 	r.POST("/locations", fishApi.InsertLocation)
 	r.PATCH("/locations", fishApi.PatchLocation)
 
+	r.GET("/species", fishApi.GetAllSpecies)
+	r.POST("/species", fishApi.InsertSpecies)
+	r.PATCH("/species", fishApi.PatchSpecies)
+
 	err = r.Run(":1111")
 	if err != nil {
 		return
