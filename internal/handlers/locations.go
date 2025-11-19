@@ -39,3 +39,26 @@ func (app *FishApi) GetLocations(c *gin.Context) {
 
 	c.JSON(200, gin.H{"locations": locations})
 }
+
+func (app *FishApi) PatchLocation(c *gin.Context) {
+	var locationUpdate core.Location
+	if err := c.ShouldBindJSON(&locationUpdate); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	location, err := db.GetLocation(c.Request.Context(), app.db, locationUpdate.UUID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch location"})
+		return
+	}
+
+	location.ApplyUpdate(locationUpdate)
+
+	if err := db.UpdateLocation(c.Request.Context(), app.db, location); err != nil {
+		c.JSON(500, gin.H{"error": "Failed to update location"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Location updated"})
+}

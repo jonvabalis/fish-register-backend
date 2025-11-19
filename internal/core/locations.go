@@ -14,3 +14,15 @@ type Location struct {
 	Address string    `json:"address"`
 	Type    string    `json:"type"`
 }
+
+func (l *Location) ApplyUpdate(u Location) {
+	if u.Name == "" {
+		l.Name = u.Name
+	}
+	if u.Address != "" {
+		l.Address = u.Address
+	}
+	if u.Type != "" {
+		l.Type = u.Type
+	}
+}

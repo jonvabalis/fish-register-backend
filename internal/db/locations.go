@@ -3,9 +3,11 @@ package db
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fish-register-backend/internal/core"
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"github.com/gofrs/uuid"
 )
 
 func InsertLocation(ctx context.Context, db *sql.DB, location core.Location) error {
@@ -53,4 +55,43 @@ func GetLocations(ctx context.Context, db *sql.DB) ([]core.Location, error) {
 	}
 
 	return locations, nil
+}
+
+func GetLocation(ctx context.Context, db *sql.DB, lUUID uuid.UUID) (core.Location, error) {
+	query := squirrel.
+		Select("uuid", "name", "address", "type").
+		From("locations").
+		Where(squirrel.Eq{"uuid": lUUID})
+
+	row := query.RunWith(db).QueryRowContext(ctx)
+
+	var l core.Location
+	err := row.Scan(
+		&l.UUID,
+		&l.Name,
+		&l.Address,
+		&l.Type,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return core.Location{}, nil
+		}
+		return core.Location{}, fmt.Errorf("scanning: %w", err)
+	}
+
+	return l, nil
+}
+
+func UpdateLocation(ctx context.Context, db *sql.DB, location core.Location) error {
+	_, err := squirrel.Update("locations").
+		SetMap(map[string]any{
+			"name":    location.Name,
+			"address": location.Address,
+			"type":    location.Type,
+		}).
+		Where(squirrel.Eq{"uuid": location.UUID}).
+		RunWith(db).
+		ExecContext(ctx)
+
+	return err
 }
