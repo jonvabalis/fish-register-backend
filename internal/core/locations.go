@@ -16,7 +16,7 @@ type Location struct {
 }
 
 func (l *Location) ApplyUpdate(u Location) {
-	if u.Name == "" {
+	if u.Name != "" {
 		l.Name = u.Name
 	}
 	if u.Address != "" {
@@ -25,4 +25,8 @@ func (l *Location) ApplyUpdate(u Location) {
 	if u.Type != "" {
 		l.Type = u.Type
 	}
+}
+
+func (l *Location) IsEmpty() bool {
+	return l.Name == "" && l.Address == "" && l.Type == ""
 }

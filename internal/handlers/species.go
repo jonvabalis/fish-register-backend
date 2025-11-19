@@ -15,7 +15,16 @@ func (app *FishApi) InsertSpecies(c *gin.Context) {
 		return
 	}
 
-	species := core.Species{
+	species, err := db.GetSpeciesByName(c.Request.Context(), app.db, newSpecies.Name)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch species"})
+		return
+	} else if !species.IsEmpty() {
+		c.JSON(200, gin.H{"message": "Species already exists"})
+		return
+	}
+
+	species = core.Species{
 		UUID:        uuid.Must(uuid.NewV4()),
 		Name:        newSpecies.Name,
 		Description: newSpecies.Description,
@@ -60,4 +69,105 @@ func (app *FishApi) PatchSpecies(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "Species updated"})
+}
+
+func (app *FishApi) GetAllSpeciesByLocation(c *gin.Context) {
+	var req struct {
+		UUID uuid.UUID `json:"locationUUID" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	location, err := db.GetLocation(c.Request.Context(), app.db, req.UUID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch location"})
+		return
+	} else if location.IsEmpty() {
+		c.JSON(404, gin.H{"error": "Failed to find provided location"})
+		return
+	}
+
+	species, err := db.GetMultipleSpeciesByLocation(c.Request.Context(), app.db, location.UUID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch species"})
+		return
+	}
+
+	c.JSON(200, gin.H{"species": species})
+}
+
+func (app *FishApi) InsertSpeciesToLocation(c *gin.Context) {
+	var req struct {
+		LocationUUID uuid.UUID `json:"locationUUID" binding:"required"`
+		SpeciesUUID  uuid.UUID `json:"speciesUUID" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	location, err := db.GetLocation(c.Request.Context(), app.db, req.LocationUUID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch location"})
+		return
+	} else if location.IsEmpty() {
+		c.JSON(404, gin.H{"error": "Failed to find the provided location"})
+		return
+	}
+
+	species, err := db.GetSpecies(c.Request.Context(), app.db, req.SpeciesUUID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch species"})
+		return
+	} else if species.IsEmpty() {
+		c.JSON(404, gin.H{"error": "Failed to find the provided species"})
+		return
+	}
+
+	if err := db.InsertSpeciesToLocation(c.Request.Context(), app.db, species.UUID, location.UUID); err != nil {
+		c.JSON(500, gin.H{"error": "Failed to insert species to location"})
+		return
+	}
+
+	c.JSON(201, gin.H{"message": "Species added to location"})
+}
+func (app *FishApi) DeleteSpeciesFromLocation(c *gin.Context) {
+	var req struct {
+		LocationUUID uuid.UUID `json:"locationUUID" binding:"required"`
+		SpeciesUUID  uuid.UUID `json:"speciesUUID" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	location, err := db.GetLocation(c.Request.Context(), app.db, req.LocationUUID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch location"})
+		return
+	} else if location.IsEmpty() {
+		c.JSON(404, gin.H{"error": "Failed to find the provided location"})
+		return
+	}
+
+	species, err := db.GetSpecies(c.Request.Context(), app.db, req.SpeciesUUID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch species"})
+		return
+	} else if species.IsEmpty() {
+		c.JSON(404, gin.H{"error": "Failed to find the provided species"})
+		return
+	}
+
+	if err := db.DeleteSpeciesFromLocation(c.Request.Context(), app.db, species.UUID, location.UUID); err != nil {
+		c.JSON(500, gin.H{"error": "Failed to delete species from location"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Species deleted from location successfully"})
 }

@@ -4,7 +4,7 @@ import "github.com/gofrs/uuid"
 
 type NewSpecies struct {
 	Name        string `json:"name" binding:"required"`
-	Description string `json:"type" binding:"required"`
+	Description string `json:"description" binding:"required"`
 }
 
 type Species struct {
@@ -13,12 +13,16 @@ type Species struct {
 	Description string    `json:"description"`
 }
 
-func (l *Species) ApplyUpdate(u Species) {
-	if u.Name == "" {
-		l.Name = u.Name
+func (s *Species) ApplyUpdate(u Species) {
+	if u.Name != "" {
+		s.Name = u.Name
 	}
 
 	if u.Description != "" {
-		l.Description = u.Description
+		s.Description = u.Description
 	}
+}
+
+func (s *Species) IsEmpty() bool {
+	return s.Name == "" && s.Description == ""
 }
