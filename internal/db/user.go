@@ -7,6 +7,7 @@ import (
 	"fish-register-backend/internal/core"
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"github.com/gofrs/uuid"
 )
 
 func CreateUser(ctx context.Context, db *sql.DB, user core.UserAuth) error {
@@ -17,6 +18,20 @@ func CreateUser(ctx context.Context, db *sql.DB, user core.UserAuth) error {
 			"email":    user.Email,
 			"password": user.Password,
 		}).
+		RunWith(db).
+		ExecContext(ctx)
+
+	return err
+}
+
+func UpdateUser(ctx context.Context, db *sql.DB, user core.UserAuth) error {
+	_, err := squirrel.Update("users").
+		SetMap(map[string]any{
+			"username": user.Username,
+			"email":    user.Email,
+			"password": user.Password,
+		}).
+		Where(squirrel.Eq{"uuid": user.UUID}).
 		RunWith(db).
 		ExecContext(ctx)
 
@@ -53,6 +68,31 @@ func GetUserByUsername(ctx context.Context, db *sql.DB, username string) (core.U
 		Select("uuid", "username", "email", "password").
 		From("users").
 		Where(squirrel.Eq{"username": username})
+
+	row := query.RunWith(db).QueryRowContext(ctx)
+
+	var ua core.UserAuth
+	err := row.Scan(
+		&ua.UUID,
+		&ua.Username,
+		&ua.Email,
+		&ua.Password,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return core.UserAuth{}, nil
+		}
+		return core.UserAuth{}, fmt.Errorf("scanning: %w", err)
+	}
+
+	return ua, nil
+}
+
+func GetUser(ctx context.Context, db *sql.DB, uuid uuid.UUID) (core.UserAuth, error) {
+	query := squirrel.
+		Select("uuid", "username", "email", "password").
+		From("users").
+		Where(squirrel.Eq{"uuid": uuid})
 
 	row := query.RunWith(db).QueryRowContext(ctx)
 

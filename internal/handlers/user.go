@@ -27,21 +27,25 @@ func (app *FishApi) Register(c *gin.Context) {
 	}
 
 	if user, err := db.GetUserByEmail(c.Request.Context(), app.db, regData.Email); err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		return
 	} else if !user.IsEmpty() {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check email"})
+		c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
 		return
 	}
 
 	if user, err := db.GetUserByUsername(c.Request.Context(), app.db, regData.Username); err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "username already in use"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		return
 	} else if !user.IsEmpty() {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check username"})
+		c.JSON(http.StatusConflict, gin.H{"error": "username already in use"})
 		return
 	}
 
+	if len(regData.Password) < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password is too short"})
+		return
+	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(regData.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
@@ -61,4 +65,70 @@ func (app *FishApi) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "user registered successfully"})
+}
+func (app *FishApi) ChangeLogin(c *gin.Context) {
+	var authData core.UserAuth
+	if err := c.ShouldBindJSON(&authData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if authData.UUID.IsNil() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patch object provided"})
+		return
+	}
+
+	user, err := db.GetUser(c.Request.Context(), app.db, authData.UUID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user doesnt exist"})
+		return
+	}
+
+	if len(authData.Email) > 0 {
+		if _, err := mail.ParseAddress(authData.Email); err != nil {
+			log.Printf("invalid email: %s", err)
+
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if foundUser, err := db.GetUserByEmail(c.Request.Context(), app.db, authData.Email); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+			return
+		} else if !foundUser.IsEmpty() {
+			c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
+			return
+		}
+
+		user.Email = authData.Email
+	}
+
+	if len(authData.Username) > 0 {
+		if foundUser, err := db.GetUserByUsername(c.Request.Context(), app.db, authData.Username); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+			return
+		} else if !foundUser.IsEmpty() {
+			c.JSON(http.StatusConflict, gin.H{"error": "username already in use"})
+			return
+		}
+
+		user.Username = authData.Username
+	}
+
+	if len(authData.Password) > 0 {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(authData.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+			return
+		}
+
+		user.Password = string(hashedPassword)
+	}
+
+	if err := db.UpdateUser(c.Request.Context(), app.db, user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "user updated successfully"})
 }
