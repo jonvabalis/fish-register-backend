@@ -112,3 +112,37 @@ func GetUser(ctx context.Context, db *sql.DB, uuid uuid.UUID) (core.UserAuth, er
 
 	return ua, nil
 }
+
+func GetUsers(ctx context.Context, db *sql.DB) ([]core.User, error) {
+	query := squirrel.
+		Select("uuid", "username", "email").
+		From("users")
+
+	rows, err := query.RunWith(db).QueryContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := make([]core.User, 0)
+
+	for rows.Next() {
+		var user core.User
+
+		if err := rows.Scan(
+			&user.UUID,
+			&user.Username,
+			&user.Email,
+		); err != nil {
+			return []core.User{}, fmt.Errorf("scanning: %w", err)
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return []core.User{}, fmt.Errorf("iterating rows: %w", err)
+	}
+
+	return users, nil
+}

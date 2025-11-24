@@ -66,6 +66,17 @@ func (app *FishApi) Register(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"message": "user registered successfully"})
 }
+
+func (app *FishApi) GetUsers(c *gin.Context) {
+	users, err := db.GetUsers(c.Request.Context(), app.db)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch users"})
+		return
+	}
+
+	c.JSON(200, gin.H{"users": users})
+}
+
 func (app *FishApi) ChangeLogin(c *gin.Context) {
 	var authData core.UserAuth
 	if err := c.ShouldBindJSON(&authData); err != nil {

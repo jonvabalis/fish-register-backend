@@ -26,7 +26,7 @@ func main() {
 
 	r.POST("/register", fishApi.Register)
 	r.PATCH("/change-login", fishApi.ChangeLogin)
-	//r.GET("/register", fishApi.GetUsers)
+	r.GET("/users", fishApi.GetUsers)
 	//r.DELETE("/register", fishApi.DeleteUser)
 
 	r.GET("/locations", fishApi.GetLocations)
