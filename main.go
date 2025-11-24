@@ -43,6 +43,11 @@ func main() {
 	r.POST("/locations-species", fishApi.InsertSpeciesToLocation)
 	r.DELETE("/locations-species", fishApi.DeleteSpeciesFromLocation)
 
+	r.GET("/rods", fishApi.GetUserRods)
+	r.POST("/rods", fishApi.InsertRod)
+	r.PATCH("/rods", fishApi.PatchRod)
+	r.DELETE("/rods", fishApi.DeleteRod)
+
 	err = r.Run(":1111")
 	if err != nil {
 		return
