@@ -116,6 +116,18 @@ func UpdateSpecies(ctx context.Context, db *sql.DB, species core.Species) error 
 	return err
 }
 
+func DeleteSpecies(ctx context.Context, db *sql.DB, sUUID uuid.UUID) error {
+	_, err := squirrel.
+		Delete("species").
+		Where(squirrel.Eq{
+			"uuid": sUUID,
+		}).
+		RunWith(db).
+		ExecContext(ctx)
+
+	return err
+}
+
 func GetMultipleSpeciesByLocation(ctx context.Context, db *sql.DB, lUUID uuid.UUID) ([]core.Species, error) {
 	query := squirrel.
 		Select("s.uuid", "s.name", "s.description").

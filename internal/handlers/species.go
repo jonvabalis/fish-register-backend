@@ -71,6 +71,33 @@ func (app *FishApi) PatchSpecies(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "Species updated"})
 }
 
+func (app *FishApi) DeleteSpecies(c *gin.Context) {
+	var req struct {
+		SpeciesUUID uuid.UUID `json:"uuid" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	species, err := db.GetSpecies(c.Request.Context(), app.db, req.SpeciesUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find species"})
+		return
+	} else if species.IsEmpty() {
+		c.JSON(http.StatusNotFound, gin.H{"error": "species doesn't exist"})
+		return
+	}
+
+	if err := db.DeleteSpecies(c.Request.Context(), app.db, species.UUID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete species"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Species deleted successfully"})
+}
+
 func (app *FishApi) GetAllSpeciesByLocation(c *gin.Context) {
 	var req struct {
 		UUID uuid.UUID `json:"locationUUID" binding:"required"`

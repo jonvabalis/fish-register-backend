@@ -95,3 +95,15 @@ func UpdateLocation(ctx context.Context, db *sql.DB, location core.Location) err
 
 	return err
 }
+
+func DeleteLocation(ctx context.Context, db *sql.DB, lUUID uuid.UUID) error {
+	_, err := squirrel.
+		Delete("locations").
+		Where(squirrel.Eq{
+			"uuid": lUUID,
+		}).
+		RunWith(db).
+		ExecContext(ctx)
+
+	return err
+}

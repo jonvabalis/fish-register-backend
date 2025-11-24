@@ -159,14 +159,14 @@ func (app *FishApi) DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find user"})
 		return
 	} else if user.IsEmpty() {
-		c.JSON(http.StatusConflict, gin.H{"error": "user doesn't exist"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "user doesn't exist"})
 		return
 	}
 
 	if err := db.DeleteUser(c.Request.Context(), app.db, user.UUID); err != nil {
-		c.JSON(500, gin.H{"error": "Failed to delete user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "User deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }

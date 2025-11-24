@@ -32,10 +32,12 @@ func main() {
 	r.GET("/locations", fishApi.GetLocations)
 	r.POST("/locations", fishApi.InsertLocation)
 	r.PATCH("/locations", fishApi.PatchLocation)
+	r.DELETE("/locations", fishApi.DeleteLocation)
 
 	r.GET("/species", fishApi.GetAllSpecies)
 	r.POST("/species", fishApi.InsertSpecies)
 	r.PATCH("/species", fishApi.PatchSpecies)
+	r.DELETE("/species", fishApi.DeleteSpecies)
 
 	r.GET("/locations-species", fishApi.GetAllSpeciesByLocation)
 	r.POST("/locations-species", fishApi.InsertSpeciesToLocation)
