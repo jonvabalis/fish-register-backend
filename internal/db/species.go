@@ -163,6 +163,7 @@ func InsertSpeciesToLocation(ctx context.Context, db *sql.DB, sUUID, lUUID uuid.
 
 	return err
 }
+
 func DeleteSpeciesFromLocation(ctx context.Context, db *sql.DB, sUUID, lUUID uuid.UUID) error {
 	_, err := squirrel.
 		Delete("locations_species").

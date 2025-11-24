@@ -143,3 +143,30 @@ func (app *FishApi) ChangeLogin(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "user updated successfully"})
 }
+
+func (app *FishApi) DeleteUser(c *gin.Context) {
+	var req struct {
+		UserUUID uuid.UUID `json:"uuid" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := db.GetUser(c.Request.Context(), app.db, req.UserUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find user"})
+		return
+	} else if user.IsEmpty() {
+		c.JSON(http.StatusConflict, gin.H{"error": "user doesn't exist"})
+		return
+	}
+
+	if err := db.DeleteUser(c.Request.Context(), app.db, user.UUID); err != nil {
+		c.JSON(500, gin.H{"error": "Failed to delete user"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "User deleted successfully"})
+}

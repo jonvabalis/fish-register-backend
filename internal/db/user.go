@@ -146,3 +146,15 @@ func GetUsers(ctx context.Context, db *sql.DB) ([]core.User, error) {
 
 	return users, nil
 }
+
+func DeleteUser(ctx context.Context, db *sql.DB, userUUID uuid.UUID) error {
+	_, err := squirrel.
+		Delete("users").
+		Where(squirrel.Eq{
+			"uuid": userUUID,
+		}).
+		RunWith(db).
+		ExecContext(ctx)
+
+	return err
+}
