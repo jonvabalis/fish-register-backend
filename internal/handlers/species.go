@@ -99,16 +99,19 @@ func (app *FishApi) DeleteSpecies(c *gin.Context) {
 }
 
 func (app *FishApi) GetAllSpeciesByLocation(c *gin.Context) {
-	var req struct {
-		UUID uuid.UUID `json:"locationUUID" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	locationUUIDStr := c.Param("locationUUID")
+	if locationUUIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "locationUUID is required"})
 		return
 	}
 
-	location, err := db.GetLocation(c.Request.Context(), app.db, req.UUID)
+	locationUUID, err := uuid.FromString(locationUUIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid locationUUID format"})
+		return
+	}
+
+	location, err := db.GetLocation(c.Request.Context(), app.db, locationUUID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to fetch location"})
 		return

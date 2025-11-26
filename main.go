@@ -39,11 +39,11 @@ func main() {
 	r.PATCH("/species", fishApi.PatchSpecies)
 	r.DELETE("/species", fishApi.DeleteSpecies)
 
-	r.GET("/locations-species", fishApi.GetAllSpeciesByLocation)
+	r.GET("/locations/:locationUUID/species", fishApi.GetAllSpeciesByLocation)
 	r.POST("/locations-species", fishApi.InsertSpeciesToLocation)
 	r.DELETE("/locations-species", fishApi.DeleteSpeciesFromLocation)
 
-	r.GET("/rods", fishApi.GetUserRods)
+	r.GET("/users/:userUUID/rods", fishApi.GetUserRods)
 	r.POST("/rods", fishApi.InsertRod)
 	r.PATCH("/rods", fishApi.PatchRod)
 	r.DELETE("/rods", fishApi.DeleteRod)

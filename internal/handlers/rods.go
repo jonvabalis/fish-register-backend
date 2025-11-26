@@ -41,16 +41,19 @@ func (app *FishApi) InsertRod(c *gin.Context) {
 }
 
 func (app *FishApi) GetUserRods(c *gin.Context) {
-	var req struct {
-		UserUUID uuid.UUID `json:"uuid" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	userUUIDStr := c.Param("userUUID")
+	if userUUIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userUUID is required"})
 		return
 	}
 
-	rods, err := db.GetUserRods(c.Request.Context(), app.db, req.UserUUID)
+	userUUID, err := uuid.FromString(userUUIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userUUID format"})
+		return
+	}
+
+	rods, err := db.GetUserRods(c.Request.Context(), app.db, userUUID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to fetch rods"})
 		return
