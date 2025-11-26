@@ -48,6 +48,11 @@ func main() {
 	r.PATCH("/rods", fishApi.PatchRod)
 	r.DELETE("/rods", fishApi.DeleteRod)
 
+	r.POST("/catches", fishApi.CreateCatch)
+	r.GET("/users/:userUUID/catches", fishApi.GetUserCatches)
+	r.PATCH("/catches", fishApi.UpdateUserCatch)
+	r.DELETE("/catches", fishApi.DeleteCatch)
+
 	err = r.Run(":1111")
 	if err != nil {
 		return
