@@ -40,8 +40,8 @@ func main() {
 	r.DELETE("/species", fishApi.DeleteSpecies)
 
 	r.GET("/locations/:locationUUID/species", fishApi.GetAllSpeciesByLocation)
-	r.POST("/locations-species", fishApi.InsertSpeciesToLocation)
-	r.DELETE("/locations-species", fishApi.DeleteSpeciesFromLocation)
+	r.POST("/locations/species", fishApi.InsertSpeciesToLocation)
+	r.DELETE("/locations/species", fishApi.DeleteSpeciesFromLocation)
 
 	r.GET("/users/:userUUID/rods", fishApi.GetUserRods)
 	r.POST("/rods", fishApi.InsertRod)
