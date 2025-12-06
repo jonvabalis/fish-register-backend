@@ -1,0 +1,3 @@
+DELETE FROM users WHERE uuid = 'e3f779cf-6d4e-4590-8236-7e8a226cb8a4'
+
+ALTER TABLE users DROP COLUMN role;

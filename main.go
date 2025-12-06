@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gofrs/uuid"
 	"log"
 	"strings"
 	"time"
@@ -99,6 +100,26 @@ func withAuthorization() gin.HandlerFunc {
 					c.Abort()
 					return
 				}
+			}
+
+			if role, ok := claims["role"]; ok {
+				if role != "admin" && role != "user" {
+					c.JSON(401, gin.H{"error": "invalid role"})
+					c.Abort()
+					return
+				}
+
+				c.Set("role", role)
+			}
+
+			if userUUID, ok := claims["userUUID"]; ok {
+				if _, err := uuid.FromString(userUUID.(string)); err != nil {
+					c.JSON(401, gin.H{"error": "token expired"})
+					c.Abort()
+					return
+				}
+
+				c.Set("userUUID", userUUID)
 			}
 
 			c.Next()

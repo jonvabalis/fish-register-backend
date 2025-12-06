@@ -51,7 +51,9 @@ func (app *FishApi) Login(c *gin.Context) {
 	key := []byte("test")
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"exp": time.Now().Add(60 * time.Minute).Unix(),
+		"exp":      time.Now().Add(60 * time.Minute).Unix(),
+		"userUUID": user.UUID,
+		"role":     user.Role,
 	})
 
 	tokenString, err := token.SignedString(key)
@@ -194,6 +196,11 @@ func (app *FishApi) ChangeLogin(c *gin.Context) {
 }
 
 func (app *FishApi) DeleteUser(c *gin.Context) {
+	if role := c.GetString("role"); role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "unauthorized"})
+		return
+	}
+
 	var req struct {
 		UserUUID uuid.UUID `json:"uuid" binding:"required"`
 	}

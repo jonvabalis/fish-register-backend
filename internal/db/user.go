@@ -40,7 +40,7 @@ func UpdateUser(ctx context.Context, db *sql.DB, user core.UserAuth) error {
 
 func GetUserByEmail(ctx context.Context, db *sql.DB, email string) (core.UserAuth, error) {
 	query := squirrel.
-		Select("uuid", "username", "email", "password").
+		Select("uuid", "username", "email", "password", "role").
 		From("users").
 		Where(squirrel.Eq{"email": email})
 
@@ -52,6 +52,7 @@ func GetUserByEmail(ctx context.Context, db *sql.DB, email string) (core.UserAut
 		&ua.Username,
 		&ua.Email,
 		&ua.Password,
+		&ua.Role,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
