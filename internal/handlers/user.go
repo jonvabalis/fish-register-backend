@@ -57,6 +57,7 @@ func (app *FishApi) Login(c *gin.Context) {
 	tokenString, err := token.SignedString(key)
 
 	c.Header("Authorization", "Bearer "+tokenString)
+	c.Header("Access-Control-Expose-Headers", "Authorization")
 	c.JSON(http.StatusOK, gin.H{"message": "login success"})
 }
 
