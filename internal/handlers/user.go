@@ -3,14 +3,62 @@ package handlers
 import (
 	"fish-register-backend/internal/db"
 	"github.com/gofrs/uuid"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"net/mail"
+	"time"
 
 	"fish-register-backend/internal/core"
 	"github.com/gin-gonic/gin"
 )
+
+func (app *FishApi) Login(c *gin.Context) {
+	var loginData core.UserLogin
+	if err := c.ShouldBindJSON(&loginData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if _, err := mail.ParseAddress(loginData.Email); err != nil {
+		log.Printf("invalid login email: %s", err)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(loginData.Password) < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password is too short"})
+		return
+	}
+
+	user, err := db.GetUserByEmail(c.Request.Context(), app.db, loginData.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to login user"})
+		return
+	}
+	if user.IsEmpty() {
+		c.JSON(http.StatusConflict, gin.H{"error": "wrong email or password"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to login user"})
+		return
+	}
+
+	key := []byte("test")
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"exp": time.Now().Add(60 * time.Minute).Unix(),
+	})
+
+	tokenString, err := token.SignedString(key)
+
+	c.Header("Authorization", "Bearer "+tokenString)
+	c.JSON(http.StatusOK, gin.H{"message": "login success"})
+}
 
 func (app *FishApi) Register(c *gin.Context) {
 	var regData core.RegisterData

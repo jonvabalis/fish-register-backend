@@ -2,11 +2,14 @@ package main
 
 import (
 	"log"
+	"strings"
+	"time"
 
 	"fish-register-backend/internal/db"
 	"fish-register-backend/internal/handlers"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
@@ -25,36 +28,78 @@ func main() {
 	fishApi := handlers.NewFishApi(dbConn)
 
 	r.POST("/register", fishApi.Register)
+	r.POST("/login", fishApi.Login)
 	r.PATCH("/change-login", fishApi.ChangeLogin)
-	r.GET("/users", fishApi.GetUsers)
-	r.DELETE("/users", fishApi.DeleteUser)
 
-	r.GET("/locations", fishApi.GetLocations)
-	r.POST("/locations", fishApi.InsertLocation)
-	r.PATCH("/locations", fishApi.PatchLocation)
-	r.DELETE("/locations", fishApi.DeleteLocation)
+	// Routes requiring authorization
+	pr := r.Group("/", withAuthorization())
 
-	r.GET("/species", fishApi.GetAllSpecies)
-	r.POST("/species", fishApi.InsertSpecies)
-	r.PATCH("/species", fishApi.PatchSpecies)
-	r.DELETE("/species", fishApi.DeleteSpecies)
+	pr.GET("/users", fishApi.GetUsers)
+	pr.DELETE("/users", fishApi.DeleteUser)
 
-	r.GET("/locations/:locationUUID/species", fishApi.GetAllSpeciesByLocation)
-	r.POST("/locations-species", fishApi.InsertSpeciesToLocation)
-	r.DELETE("/locations-species", fishApi.DeleteSpeciesFromLocation)
+	pr.GET("/locations", fishApi.GetLocations)
+	pr.POST("/locations", fishApi.InsertLocation)
+	pr.PATCH("/locations", fishApi.PatchLocation)
+	pr.DELETE("/locations", fishApi.DeleteLocation)
 
-	r.GET("/users/:userUUID/rods", fishApi.GetUserRods)
-	r.POST("/rods", fishApi.InsertRod)
-	r.PATCH("/rods", fishApi.PatchRod)
-	r.DELETE("/rods", fishApi.DeleteRod)
+	pr.GET("/species", fishApi.GetAllSpecies)
+	pr.POST("/species", fishApi.InsertSpecies)
+	pr.PATCH("/species", fishApi.PatchSpecies)
+	pr.DELETE("/species", fishApi.DeleteSpecies)
 
-	r.POST("/catches", fishApi.CreateCatch)
-	r.GET("/users/:userUUID/catches", fishApi.GetUserCatches)
-	r.PATCH("/catches", fishApi.UpdateUserCatch)
-	r.DELETE("/catches", fishApi.DeleteCatch)
+	pr.GET("/locations/:locationUUID/species", fishApi.GetAllSpeciesByLocation)
+	pr.POST("/locations-species", fishApi.InsertSpeciesToLocation)
+	pr.DELETE("/locations-species", fishApi.DeleteSpeciesFromLocation)
+
+	pr.GET("/users/:userUUID/rods", fishApi.GetUserRods)
+	pr.POST("/rods", fishApi.InsertRod)
+	pr.PATCH("/rods", fishApi.PatchRod)
+	pr.DELETE("/rods", fishApi.DeleteRod)
+
+	pr.POST("/catches", fishApi.CreateCatch)
+	pr.GET("/users/:userUUID/catches", fishApi.GetUserCatches)
+	pr.PATCH("/catches", fishApi.UpdateUserCatch)
+	pr.DELETE("/catches", fishApi.DeleteCatch)
 
 	err = r.Run(":1111")
 	if err != nil {
 		return
+	}
+}
+
+func withAuthorization() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(401, gin.H{"error": "authorization required"})
+			c.Abort()
+			return
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(token *jwt.Token) (any, error) {
+			return []byte("test"), nil
+		})
+
+		if err != nil || !token.Valid {
+			c.JSON(401, gin.H{"error": "invalid token"})
+			c.Abort()
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			if exp, ok := claims["exp"].(int64); ok {
+				if time.Now().Unix() > exp {
+					c.JSON(401, gin.H{"error": "token expired"})
+					c.Abort()
+					return
+				}
+			}
+
+			c.Next()
+		}
+
+		c.Abort()
 	}
 }
