@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fish-register-backend/internal/core"
+	"fmt"
 	"github.com/gofrs/uuid"
 	"log"
 	"strings"
@@ -69,6 +71,17 @@ func main() {
 	pr.Static("/trophies", "./uploads")
 	pr.POST("/upload/trophies", fishApi.UploadPicture)
 	pr.GET("/upload/trophies/:filename", fishApi.DownloadPicture)
+
+	r.GET("/ws", fishApi.RunWebsocket)
+
+	go func() {
+		startTime := time.Now()
+		for {
+			<-time.After(1 * time.Second)
+
+			handlers.SendNotification(core.Notification{Message: fmt.Sprintf("Server is up for %s", time.Since(startTime))})
+		}
+	}()
 
 	err = r.Run(":1111")
 	if err != nil {
