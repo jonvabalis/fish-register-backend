@@ -26,7 +26,7 @@ func main() {
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"http://localhost:5173"},
-		AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowMethods: []string{"GET", "POST", "DELETE", "PATCH"},
 		AllowHeaders: []string{"Authorization", "Content-Type"},
 	}))
 
@@ -65,6 +65,10 @@ func main() {
 	pr.GET("/users/:userUUID/catches", fishApi.GetUserCatches)
 	pr.PATCH("/catches", fishApi.UpdateUserCatch)
 	pr.DELETE("/catches", fishApi.DeleteCatch)
+
+	pr.Static("/trophies", "./uploads")
+	pr.POST("/upload/trophies", fishApi.UploadPicture)
+	pr.GET("/upload/trophies/:filename", fishApi.DownloadPicture)
 
 	err = r.Run(":1111")
 	if err != nil {
